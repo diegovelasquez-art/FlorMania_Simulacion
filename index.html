@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlorManía</title>
+    <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+
+    <div class="contenedor">
+        
+        <!-- ================= ENCABEZADO PRINCIPAL ================= -->
+        <header class="header">
+            <div class="logo">FlorManía</div>
+            
+            <nav class="nav-principal">
+                <a href="#" id="envia-flores">Envía Flores</a>
+                <a href="#">Nosotros</a>
+                <button id="btn-login" class="btn-login">Iniciar Sesión</button>
+            </nav>
+        </header>
+
+        <!-- ================= MENÚ DE CATEGORÍAS ================= -->
+        <nav class="categorias">
+            <a href="#">Girasoles</a>
+            <a href="#">Rosas</a>
+            <a href="#">Claveles</a>
+            <a href="#">Orquídeas</a>
+            <a href="#">Margaritas</a>
+        </nav>
+
+        <!-- ================= CONTENIDO PRINCIPAL ================= -->
+        <main class="contenido">
+
+            <!-- Banner Flor del Mes -->
+            <section class="seccion-principal">
+                <h1 class="titulo-mes">Flor del Mes</h1>
+                
+                <!-- Imagen Flor del Mes -->
+                <div class="banner-mes">
+                    <img src="static/images/flor-del-mes.jpg" alt="Flor del Mes" class="img-banner">
+                </div>
+            </section>
+
+            <!-- Barra de Resultados -->
+            <div class="sub-header-resultados">
+                <span class="resultados-texto">Mostrando 50 resultados</span>
+                <a href="#" class="ver-mas">Ver más Flores</a>
+            </div>
+
+            <!-- Grid de Productos -->
+            <section class="grid-productos">
+                
+                <!-- Producto 1: Ramo de Rosas -->
+                <div class="tarjeta-producto">
+                    <div class="item-img">
+                        <img src="static/images/ramo-de-rosas.jpg" alt="Ramo de Rosas">
+                    </div>
+                    <div class="info-producto">
+                        <div class="detalles">
+                            <span class="nombre">Ramo de Rosas</span>
+                            <span class="precio">$40.00</span>
+                        </div>
+                        <button class="btn-comprar">Comprar</button>
+                    </div>
+                </div>
+
+                <!-- Producto 2: Arreglo Tulipanes -->
+                <div class="tarjeta-producto">
+                    <div class="item-img">
+                        <img src="static/images/arreglo-tulipanes.jpg" alt="Arreglo Tulipanes">
+                    </div>
+                    <div class="info-producto">
+                        <div class="detalles">
+                            <span class="nombre">Arreglo Tulipanes</span>
+                            <span class="precio">$50.00</span>
+                        </div>
+                        <button class="btn-comprar">Comprar</button>
+                    </div>
+                </div>
+
+                <!-- Producto 3: Bouquet Lirios -->
+                <div class="tarjeta-producto">
+                    <div class="item-img">
+                        <img src="static/images/bouquet-lirios.jpg" alt="Bouquet Lirios">
+                    </div>
+                    <div class="info-producto">
+                        <div class="detalles">
+                            <span class="nombre">Bouquet Lirios</span>
+                            <span class="precio">$25.00</span>
+                        </div>
+                        <button class="btn-comprar">Comprar</button>
+                    </div>
+                </div>
+
+            </section>
+
+        </main>
+    </div>
+
+    <script src="static/js/script.js"></script>
+</body>
+</html>

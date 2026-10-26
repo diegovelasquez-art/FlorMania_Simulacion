@@ -1,0 +1,705 @@
+import React, { useState, useEffect } from 'react';
+import {
+Shield,
+Zap,
+Crosshair,
+BookOpen,
+Image as ImageIcon,
+Home as HomeIcon,
+Award,
+Terminal,
+Flame,
+RefreshCw,
+Play,
+Volume2,
+VolumeX,
+Info,
+Sparkles,
+Eye,
+Maximize2,
+X,
+ChevronRight,
+Layers,
+Sword,
+Target
+} from 'lucide-react';
+
+// Web Audio API Sound Effects for Authentic Limbus UI feel
+const playUiSound = (type = 'click') => {
+try {
+const ctx = new (window.AudioContext || window.webkitAudioContext)();
+const osc = ctx.createOscillator();
+const gain = ctx.createGain();
+osc.connect(gain);
+gain.connect(ctx.destination);
+
+if (type === 'click') {
+osc.type = 'sine';
+osc.frequency.setValueAtTime(800, ctx.currentTime);
+osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.06);
+gain.gain.setValueAtTime(0.12, ctx.currentTime);
+gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.06);
+osc.start();
+osc.stop(ctx.currentTime + 0.06);
+} else if (type === 'select') {
+osc.type = 'triangle';
+osc.frequency.setValueAtTime(440, ctx.currentTime);
+osc.frequency.setValueAtTime(880, ctx.currentTime + 0.04);
+gain.gain.setValueAtTime(0.15, ctx.currentTime);
+gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+osc.start();
+osc.stop(ctx.currentTime + 0.1);
+} else if (type === 'coin') {
+osc.type = 'square';
+osc.frequency.setValueAtTime(1200, ctx.currentTime);
+osc.frequency.exponentialRampToValueAtTime(1600, ctx.currentTime + 0.08);
+gain.gain.setValueAtTime(0.1, ctx.currentTime);
+gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.08);
+osc.start();
+osc.stop(ctx.currentTime + 0.08);
+}
+} catch (e) {
+// Fail silently if browser blocks audio autoplay
+}
+};
+
+export default function App() {
+const [activeTab, setActiveTab] = useState('home');
+const [soundEnabled, setSoundEnabled] = useState(true);
+const [ammoCount, setAmmoCount] = useState(6);
+const [selectedArt, setSelectedArt] = useState(null);
+const [simulatedSkill, setSimulatedSkill] = useState(null);
+const [coinResults, setCoinResults] = useState([]);
+const [audioPlaying, setAudioPlaying] = useState(false);
+
+const handleTabChange = (tabId) => {
+if (soundEnabled) playUiSound('select');
+setActiveTab(tabId);
+};
+
+const triggerSound = (type) => {
+if (soundEnabled) playUiSound(type);
+};
+
+// Main Background Artwork image URL
+const bgArtUrl = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1600&auto=format&fit=crop";
+const characterChibiUrl =
+"https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=600&auto=format&fit=crop";
+
+const navItems = [
+{ id: 'home', number: '01', label: 'Home', icon: HomeIcon },
+{ id: 'lore', number: '02', label: 'Lore', icon: BookOpen },
+{ id: 'fanarts', number: '03', label: 'Fanarts', icon: ImageIcon },
+{ id: 'habilidades', number: '04', label: 'Habilidades', icon: Zap },
+];
+
+const fanartList = [
+{
+id: 1,
+title: 'Capo IIII Execution',
+artist: 'NCorp_Artisan',
+tag: 'Combat',
+image: 'https://images.unsplash.com/photo-1563089145-599997674d42?q=80&w=800&auto=format&fit=crop'
+},
+{
+id: 2,
+title: 'Red Pagoda Stand-off',
+artist: 'City_Watcher',
+tag: 'Story',
+image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=80&w=800&auto=format&fit=crop'
+},
+{
+id: 3,
+title: 'Chibi Lei Heng & Pistol',
+artist: 'Limbus_Chibi_Fan',
+tag: 'Chibi',
+image: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=800&auto=format&fit=crop'
+},
+{
+id: 4,
+title: 'Tremor Burst Slash',
+artist: 'Blade_Lineage_3',
+tag: 'Combat',
+image: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=800&auto=format&fit=crop'
+}
+];
+
+const skillsData = [
+{
+id: 's1',
+name: "Chaser's Prey",
+type: "Slash / Pride",
+coins: 2,
+basePower: 4,
+coinPower: 4,
+desc: "[Turn Start] Inflict Tremor (3) on the enemy with the lowest HP. On Hit: Gain 1 Unique Ammo. Tremor Burst on 2nd
+Coin."
+},
+{
+id: 's2',
+name: "Capo's Punishment",
+type: "Pierce / Wrath",
+coins: 3,
+basePower: 5,
+coinPower: 3,
+desc: "Consume 1 Unique Ammo to boost Coin Power (+2). [On Hit] Inflict 4 Tremor Count. Trigger Tremor Burst twice if
+target is Staggered."
+},
+{
+id: 's3',
+name: "Unquestioned Authority",
+type: "Blunt / Lust",
+coins: 4,
+basePower: 6,
+coinPower: 5,
+desc: "[On Combat Start] Consume all remaining Unique Ammo. For each ammo consumed, deals +15% Slash Damage and triggers
+Tremor Burst on all targets."
+}
+];
+
+const simulateCoinFlip = (skill) => {
+triggerSound('coin');
+setSimulatedSkill(skill);
+const results = Array.from({ length: skill.coins }, () => Math.random() > 0.45);
+setCoinResults(results);
+};
+
+return (
+<div
+    className="min-h-screen bg-[#09090d] text-gray-200 font-sans antialiased selection:bg-red-900 selection:text-white flex flex-col overflow-x-hidden">
+
+    {/* Top Bar / Flow Starting Point Indicator Header */}
+    <header
+        className="bg-[#111118]/90 border-b border-red-900/40 px-4 py-2 flex items-center justify-between text-xs tracking-wider z-30 backdrop-blur-md">
+        <div className="flex items-center space-x-3">
+            <span
+                className="inline-flex items-center px-2 py-0.5 rounded bg-red-950/80 border border-red-600/60 text-red-400 font-mono font-bold animate-pulse">
+                <span className="w-2 h-2 rounded-full bg-red-500 mr-1.5 inline-block"></span>
+                FLOW STARTING POINT
+            </span>
+            <span className="text-gray-400 hidden sm:inline">LIMBUS COMPANY DOSSIER SYSTEM v4.0.2</span>
+        </div>
+
+        <div className="flex items-center space-x-4">
+            <button onClick={()=> setSoundEnabled(!soundEnabled)};
+                className="flex items-center space-x-1.5 text-gray-400 hover:text-red-400 transition-colors"
+                title="Toggle Sound Effects"
+                >
+                {soundEnabled ?
+                <Volume2 size={16} className="text-red-400" /> :
+                <VolumeX size={16} />}
+                <span className="font-mono text-[10px] hidden md:inline">{soundEnabled ? 'AUDIO: ON' : 'AUDIO:
+                    OFF'}</span>
+            </button>
+
+            <div
+                className="text-red-500 font-mono font-bold text-xs tracking-widest border border-red-900/50 px-2 py-0.5 rounded bg-red-950/30">
+                INDEX // 04
+            </div>
+        </div>
+    </header>
+
+    {/* Main Workspace Layout */}
+    <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 min-h-0 relative">
+
+        {/* LEFT PANEL - Navigation & Index Controls (4 Columns on Desktop) */}
+        <aside
+            className="lg:col-span-4 bg-[#0d0d13] border-r border-red-900/30 flex flex-col justify-between p-4 space-y-4 z-20 shadow-2xl">
+
+            <div className="space-y-4">
+                {/* Header Identity Card */}
+                <div
+                    className="relative overflow-hidden rounded-lg border border-red-800/60 bg-gradient-to-br from-[#1a080c] via-[#10080c] to-[#0a0a0e] p-4 shadow-lg group">
+                    {/* Corner decorative accents */}
+                    <div className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-red-500"></div>
+                    <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-red-500"></div>
+                    <div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-red-500"></div>
+                    <div className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-red-500"></div>
+
+                    <div className="flex items-center space-x-3 mb-2">
+                        <div className="relative">
+                            <div
+                                className="w-12 h-12 rounded border border-red-600/50 bg-black/60 overflow-hidden flex items-center justify-center shadow-inner">
+                                <img src="https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=200&auto=format&fit=crop"
+                                    alt="Chibi Sprite"
+                                    className="object-cover w-full h-full filter saturate-150 contrast-125" />
+                            </div>
+                            <span
+                                className="absolute -bottom-1 -right-1 bg-red-600 text-[9px] font-bold px-1 rounded text-black">
+                                000
+                            </span>
+                        </div>
+
+                        <div>
+                            <div
+                                className="text-[10px] font-mono tracking-widest text-red-500 uppercase flex items-center">
+                                <span className="w-1.5 h-1.5 bg-red-500 rounded-full mr-1"></span>
+                                LIMBUS DOSSIER // 04
+                            </div>
+                            <h1
+                                className="text-2xl font-black tracking-tight text-red-500 flex items-center gap-2 drop-shadow-[0_2px_8px_rgba(255,0,0,0.4)]">
+                                Lei heng
+                            </h1>
+                            <p
+                                className="text-red-400 font-mono text-sm tracking-widest font-bold flex items-center gap-1">
+                                Capo <span
+                                    className="tracking-tighter text-red-500 text-base font-extrabold">||||</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div
+                        className="pt-2 border-t border-red-900/30 flex justify-between items-center text-[11px] font-mono text-gray-400">
+                        <span>IDENTITY: THUMB CAPO</span>
+                        <span className="text-amber-400 font-bold">STAGGER: 3 THRESHOLDS</span>
+                    </div>
+                </div>
+
+                {/* INDEX Navigation Buttons */}
+                <div className="space-y-2">
+                    <div
+                        className="text-[10px] font-mono tracking-widest text-gray-500 px-1 uppercase flex items-center justify-between">
+                        <span>INDEX MENU</span>
+                        <span className="text-red-500/80">SELECT TAB</span>
+                    </div>
+
+                    {navItems.map((item) => {
+                    const IconComponent = item.icon;
+                    const isActive = activeTab === item.id;
+                    return (
+                    <button key={item.id} onClick={()=> handleTabChange(item.id)}
+                        className={`w-full text-left px-4 py-3.5 rounded-md border transition-all duration-200 flex
+                        items-center justify-between group relative overflow-hidden ${
+                        isActive
+                        ? 'bg-gradient-to-r from-red-950/80 via-red-900/40 to-black border-red-500/90
+                        shadow-[0_0_15px_rgba(220,38,38,0.25)] text-white'
+                        : 'bg-[#12121a]/80 border-red-900/20 text-gray-400 hover:border-red-600/50 hover:bg-[#181824]
+                        hover:text-red-200'
+                        }`}
+                        >
+                        {isActive && (
+                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-red-500 to-amber-500">
+                        </div>
+                        )}
+
+                        <div className="flex items-center space-x-3">
+                            <span className={`font-mono text-xs ${isActive ? 'text-amber-400 font-bold'
+                                : 'text-red-700/80 group-hover:text-red-400' }`}>
+                                {item.number}
+                            </span>
+                            <span className="text-xs text-red-500 font-bold">◇</span>
+                            <span className={`text-base font-semibold tracking-wide ${isActive
+                                ? 'text-red-400 font-bold' : '' }`}>
+                                {item.label}
+                            </span>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                            <IconComponent size={16} className={isActive ? 'text-red-400 animate-pulse'
+                                : 'text-gray-600 group-hover:text-red-400' } />
+                            <ChevronRight size={16} className={`transition-transform duration-200 ${isActive
+                                ? 'translate-x-1 text-red-500' : 'text-gray-700 group-hover:text-red-400' }`} />
+                        </div>
+                    </button>
+                    );
+                    })}
+                </div>
+            </div>
+
+            {/* Bottom Left Character Stats & Passive Card Preview */}
+            <div className="rounded-lg border border-red-900/40 bg-[#0e0a10]/90 p-3 text-xs space-y-2 font-mono">
+                <div className="flex justify-between items-center border-b border-red-900/30 pb-1.5">
+                    <span className="text-red-400 font-bold flex items-center gap-1">
+                        <Target size={12} /> PASSIVES & STATUS
+                    </span>
+                    <span className="text-amber-400 text-[10px]">THUMB AMMO: {ammoCount}/6</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-[11px]">
+                    <div className="bg-black/40 p-1.5 rounded border border-red-900/20">
+                        <div className="text-gray-400 text-[9px]">UNIQUE EFFECT</div>
+                        <div className="text-red-300 font-bold">Tremor - Burst</div>
+                    </div>
+                    <div className="bg-black/40 p-1.5 rounded border border-red-900/20">
+                        <div className="text-gray-400 text-[9px]">OFFENSE TYPE</div>
+                        <div className="text-amber-300 font-bold">Slash / Tremor</div>
+                    </div>
+                </div>
+
+                {/* Interactive Ammo reload controls */}
+                <div className="flex items-center justify-between pt-1">
+                    <span className="text-[10px] text-gray-400">AMMO SYSTEM:</span>
+                    <div className="flex gap-1">
+                        {[...Array(6)].map((_, i) => (
+                        <span key={i} className={`w-2.5 h-3.5 rounded-sm transition-all ${ i < ammoCount
+                            ? 'bg-amber-500 border border-amber-300 shadow-[0_0_5px_rgba(245,158,11,0.5)]'
+                            : 'bg-gray-800 border border-gray-700' }`} />
+                        ))}
+                    </div>
+                    <button onClick={()=> {
+                        triggerSound('click');
+                        setAmmoCount(prev => prev >= 6 ? 0 : prev + 1);
+                        }}
+                        className="ml-1 text-[10px] text-red-400 hover:text-white underline font-bold"
+                        >
+                        RELOAD
+                    </button>
+                </div>
+            </div>
+
+        </aside>
+
+        {/* RIGHT PANEL - Main Dynamic Screen Content (8 Columns on Desktop) */}
+        <main className="lg:col-span-8 relative min-h-[500px] bg-black flex flex-col overflow-hidden">
+
+            {/* Main Background Artwork with Overlay Gradient */}
+            <div className="absolute inset-0 z-0">
+                <img src={bgArtUrl} alt="Lei heng Art background"
+                    className="w-full h-full object-cover object-center filter saturate-125 contrast-110 opacity-40 transition-opacity duration-700" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#09090d] via-[#09090d]/60 to-transparent"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-[#09090d] via-transparent to-[#09090d]/80"></div>
+            </div>
+
+            {/* Dynamic Content Container */}
+            <div className="relative z-10 flex-1 p-6 flex flex-col justify-between space-y-6 overflow-y-auto">
+
+                {/* TAB 01: HOME */}
+                {activeTab === 'home' && (
+                <div className="space-y-6 animate-fadeIn">
+                    <div
+                        className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-red-800/40 pb-4">
+                        <div>
+                            <span className="text-red-500 font-mono text-xs tracking-widest uppercase">
+                                Overview & Tactical Data
+                            </span>
+                            <h2
+                                className="text-3xl md:text-5xl font-black text-white tracking-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]">
+                                Lei heng <span className="text-red-500">Capo IIII</span>
+                            </h2>
+                            <p className="text-gray-300 text-sm mt-1 max-w-xl">
+                                Un respetado y formidable Capo del Sindicato Thumb. Experto en combate táctico con gran
+                                espada y pistolas duales con munición Tremor.
+                            </p>
+                        </div>
+
+                        <div
+                            className="bg-red-950/70 border border-red-600/50 rounded-lg p-3 text-right font-mono text-xs space-y-1 min-w-[180px]">
+                            <div className="text-gray-400">AMMO CAPACITY: <span className="text-amber-400 font-bold">6
+                                    ROUNDS</span></div>
+                            <div className="text-gray-400">FACTION: <span className="text-red-400 font-bold">THE
+                                    THUMB</span></div>
+                            <div className="text-gray-400">STAGGER RATE: <span
+                                    className="text-amber-300 font-bold">HIGH</span></div>
+                        </div>
+                    </div>
+
+                    {/* Stat Cards Grid */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div className="bg-[#120a0f]/80 border border-red-900/40 p-3 rounded-lg backdrop-blur">
+                            <div className="text-gray-400 font-mono text-[10px]">HP MAX</div>
+                            <div className="text-2xl font-black text-red-400 font-mono">182</div>
+                            <div className="text-[10px] text-gray-500">Tier 000 Base</div>
+                        </div>
+
+                        <div className="bg-[#120a0f]/80 border border-red-900/40 p-3 rounded-lg backdrop-blur">
+                            <div className="text-gray-400 font-mono text-[10px]">DEFENSE LEVEL</div>
+                            <div className="text-2xl font-black text-amber-400 font-mono">42 <span
+                                    className="text-xs font-normal text-amber-600">+2</span></div>
+                            <div className="text-[10px] text-gray-500">Guard Shield</div>
+                        </div>
+
+                        <div className="bg-[#120a0f]/80 border border-red-900/40 p-3 rounded-lg backdrop-blur">
+                            <div className="text-gray-400 font-mono text-[10px]">SPEED RANGE</div>
+                            <div className="text-2xl font-black text-red-400 font-mono">3 - 7</div>
+                            <div className="text-[10px] text-gray-500">Agility Stat</div>
+                        </div>
+
+                        <div className="bg-[#120a0f]/80 border border-red-900/40 p-3 rounded-lg backdrop-blur">
+                            <div className="text-gray-400 font-mono text-[10px]">SANITY (SP)</div>
+                            <div className="text-2xl font-black text-emerald-400 font-mono">+45</div>
+                            <div className="text-[10px] text-gray-500">Max Morale</div>
+                        </div>
+                    </div>
+
+                    {/* Character Feature Highlight Box */}
+                    <div
+                        className="bg-gradient-to-r from-red-950/60 via-[#160a12]/80 to-transparent border-l-4 border-red-600 p-4 rounded-r-lg shadow-lg">
+                        <h3 className="text-red-400 font-bold text-base flex items-center gap-2">
+                            <Flame size={18} /> Habilidad Pasiva Especial: Chaser's Prey
+                        </h3>
+                        <p className="text-gray-300 text-xs mt-1 leading-relaxed">
+                            Al inicio del turno, aplica <span className="text-amber-400 font-semibold">Tremor (3)</span>
+                            al enemigo con menor vida actual. Si inflige daño a un enemigo afectado por Tremor, recupera
+                            <span className="text-amber-400 font-semibold">1 Munición Única</span> y otorga <span
+                                className="text-red-400 font-semibold">Offense Level Up</span> para la siguiente ronda.
+                        </p>
+                    </div>
+                </div>
+                )}
+
+                {/* TAB 02: LORE */}
+                {activeTab === 'lore' && (
+                <div className="space-y-6 animate-fadeIn">
+                    <div className="border-b border-red-800/40 pb-3">
+                        <span className="text-red-500 font-mono text-xs tracking-widest uppercase">
+                            Syndicate Archives & Background
+                        </span>
+                        <h2 className="text-3xl font-black text-white tracking-tight">
+                            Expediente: <span className="text-red-500">Lei heng</span>
+                        </h2>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div
+                            className="md:col-span-2 space-y-4 bg-[#110d14]/80 p-5 rounded-lg border border-red-900/30 text-xs text-gray-300 leading-relaxed backdrop-blur">
+                            <p>
+                                <strong className="text-red-400">Lei Heng</strong> ocupa la posición de Capo IV dentro
+                                de la estructura de mando de <strong className="text-white">The Thumb</strong>.
+                                Reconocido por su absoluta adhesión a la etiqueta del sindicato y su implacable
+                                ejecución de órdenes.
+                            </p>
+                            <p>
+                                Sus armas consisten en una gran espada ceremonial combinada con armas de fuego
+                                alimentadas con cartuchos especiales de resonancia Tremor. En batalla, coordina las
+                                líneas traseras ordenando ejecuciones disciplinadas.
+                            </p>
+
+                            {/* Audio Log Simulation */}
+                            <div
+                                className="mt-4 p-3 bg-black/60 rounded border border-red-900/40 flex items-center justify-between">
+                                <div className="flex items-center space-x-3">
+                                    <button onClick={()=> {
+                                        triggerSound('click');
+                                        setAudioPlaying(!audioPlaying);
+                                        }}
+                                        className="w-8 h-8 rounded-full bg-red-600 hover:bg-red-500 text-black flex
+                                        items-center justify-center font-bold"
+                                        >
+                                        {audioPlaying ?
+                                        <X size={16} /> :
+                                        <Play size={16} className="ml-0.5" />}
+                                    </button>
+                                    <div>
+                                        <div className="text-[11px] font-bold text-red-400 font-mono">REGISTRO DE VOZ
+                                            #0412</div>
+                                        <div className="text-[9px] text-gray-500 font-mono">
+                                            {audioPlaying ? "REPRODUCIENDO DIÁLOGO..." : "HAZ CLIC PARA ESCUCHAR
+                                            ARCHIVO"}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {audioPlaying && (
+                                <div className="flex items-center space-x-1">
+                                    <span className="w-1 h-4 bg-red-500 animate-bounce"></span>
+                                    <span className="w-1 h-6 bg-red-500 animate-bounce delay-100"></span>
+                                    <span className="w-1 h-3 bg-red-500 animate-bounce delay-200"></span>
+                                </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="bg-[#150a10]/80 p-4 rounded-lg border border-red-900/30 text-xs space-y-3">
+                            <h4 className="text-amber-400 font-mono font-bold border-b border-red-900/40 pb-1">
+                                REGLAS DE ETIQUETA
+                            </h4>
+                            <ul className="space-y-2 text-gray-400 font-mono text-[11px]">
+                                <li className="flex items-start gap-1.5">
+                                    <span className="text-red-500 font-bold">1.</span>
+                                    <span>La palabra de un superior es ley absoluta en el campo.</span>
+                                </li>
+                                <li className="flex items-start gap-1.5">
+                                    <span className="text-red-500 font-bold">2.</span>
+                                    <span>La falta de respeto se paga con munición de ejecución.</span>
+                                </li>
+                                <li className="flex items-start gap-1.5">
+                                    <span className="text-red-500 font-bold">3.</span>
+                                    <span>El silencio ante el Capo indica subordinación total.</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                )}
+
+                {/* TAB 03: FANARTS */}
+                {activeTab === 'fanarts' && (
+                <div className="space-y-4 animate-fadeIn">
+                    <div className="flex justify-between items-center border-b border-red-800/40 pb-3">
+                        <div>
+                            <span className="text-red-500 font-mono text-xs tracking-widest uppercase">
+                                Community & Illustration Gallery
+                            </span>
+                            <h2 className="text-2xl md:text-3xl font-black text-white">Galería de Fanarts</h2>
+                        </div>
+                        <span className="text-xs font-mono text-gray-400">{fanartList.length} ILUSTRACIONES</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {fanartList.map((art) => (
+                        <div key={art.id} onClick={()=> {
+                            triggerSound('click');
+                            setSelectedArt(art);
+                            }}
+                            className="group relative rounded-lg border border-red-900/30 overflow-hidden bg-black
+                            cursor-pointer hover:border-red-500 transition-all duration-300"
+                            >
+                            <div className="h-44 overflow-hidden relative">
+                                <img src={art.image} alt={art.title}
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 filter brightness-90 group-hover:brightness-100" />
+                                <div
+                                    className="absolute top-2 right-2 bg-black/80 text-amber-400 font-mono text-[10px] px-2 py-0.5 rounded border border-amber-500/40">
+                                    {art.tag}
+                                </div>
+                            </div>
+
+                            <div className="p-3 bg-[#0f0b12] flex justify-between items-center">
+                                <div>
+                                    <h4
+                                        className="text-sm font-bold text-gray-200 group-hover:text-red-400 transition-colors">
+                                        {art.title}
+                                    </h4>
+                                    <p className="text-[10px] font-mono text-gray-500">Por: {art.artist}</p>
+                                </div>
+                                <Maximize2 size={14} className="text-gray-500 group-hover:text-red-400" />
+                            </div>
+                        </div>
+                        ))}
+                    </div>
+                </div>
+                )}
+
+                {/* TAB 04: HABILIDADES */}
+                {activeTab === 'habilidades' && (
+                <div className="space-y-5 animate-fadeIn">
+                    <div className="border-b border-red-800/40 pb-3">
+                        <span className="text-red-500 font-mono text-xs tracking-widest uppercase">
+                            Combat Skills & Coin Flip Simulator
+                        </span>
+                        <h2 className="text-2xl md:text-3xl font-black text-white">Habilidades de Combate</h2>
+                    </div>
+
+                    <div className="space-y-3">
+                        {skillsData.map((skill) => (
+                        <div key={skill.id}
+                            className="bg-[#120b12]/90 border border-red-900/40 rounded-lg p-4 space-y-2 hover:border-red-600/60 transition-all backdrop-blur">
+                            <div
+                                className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-red-900/30 pb-2">
+                                <div className="flex items-center space-x-3">
+                                    <span
+                                        className="w-3 h-3 rounded-full bg-red-600 inline-block shadow-[0_0_8px_rgba(220,38,38,0.8)]"></span>
+                                    <h3 className="text-lg font-bold text-white">{skill.name}</h3>
+                                    <span
+                                        className="text-xs font-mono px-2 py-0.5 bg-red-950/80 text-red-300 rounded border border-red-800/40">
+                                        {skill.type}
+                                    </span>
+                                </div>
+
+                                <div className="flex items-center space-x-3 font-mono text-xs">
+                                    <span className="text-gray-400">BASE: <strong
+                                            className="text-white">{skill.basePower}</strong></span>
+                                    <span className="text-gray-400">COIN: <strong
+                                            className="text-amber-400">+{skill.coinPower}</strong></span>
+                                    <span className="text-gray-400">COINS: <strong
+                                            className="text-red-400">{skill.coins}</strong></span>
+
+                                    <button onClick={()=> simulateCoinFlip(skill)}
+                                        className="bg-red-900/60 hover:bg-red-600 text-white px-2.5 py-1 rounded
+                                        text-[11px] font-bold transition-colors border border-red-500/40 flex
+                                        items-center gap-1"
+                                        >
+                                        <RefreshCw size={12} /> PROBAR COINS
+                                    </button>
+                                </div>
+                            </div>
+
+                            <p className="text-xs text-gray-300 leading-relaxed">
+                                {skill.desc}
+                            </p>
+                        </div>
+                        ))}
+                    </div>
+
+                    {/* Coin Flip Simulation Output Box */}
+                    {simulatedSkill && (
+                    <div
+                        className="bg-black/90 border border-amber-500/60 p-4 rounded-lg space-y-2 animate-fadeIn font-mono">
+                        <div className="flex justify-between items-center text-xs">
+                            <span className="text-amber-400 font-bold flex items-center gap-1">
+                                <Sparkles size={14} /> RESULTADO SIMULADOR DE COINS: {simulatedSkill.name}
+                            </span>
+                            <button onClick={()=> setSimulatedSkill(null)}
+                                className="text-gray-500 hover:text-white"
+                                >
+                                <X size={14} />
+                            </button>
+                        </div>
+
+                        <div className="flex items-center space-x-3 pt-2">
+                            {coinResults.map((heads, idx) => (
+                            <div key={idx} className={`w-10 h-10 rounded-full flex items-center justify-center font-bold
+                                text-sm border-2 ${ heads
+                                ? 'bg-amber-500 text-black border-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.8)]'
+                                : 'bg-gray-800 text-gray-500 border-gray-700' }`}>
+                                {heads ? '+PWR' : 'TAIL'}
+                            </div>
+                            ))}
+
+                            <div className="ml-auto text-right">
+                                <div className="text-[10px] text-gray-400">PODER TOTAL CALCULADO</div>
+                                <div className="text-xl font-black text-amber-400">
+                                    {simulatedSkill.basePower + (coinResults.filter(Boolean).length *
+                                    simulatedSkill.coinPower)} PWR
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    )}
+                </div>
+                )}
+
+            </div>
+
+            {/* Bottom Interactive Navigation Status Footer */}
+            <footer
+                className="relative z-10 bg-[#0d0d13]/90 border-t border-red-900/30 px-6 py-2.5 flex items-center justify-between text-[11px] font-mono text-gray-400">
+                <div className="flex items-center space-x-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    <span>STATE: ACTIVE PROTOTYPE</span>
+                </div>
+                <div className="text-red-500/80">
+                    CLICK SLOTS TO TEST INTERACTION FLOW
+                </div>
+            </footer>
+
+        </main>
+    </div>
+
+    {/* Lightbox Modal for Fanart Display */}
+    {selectedArt && (
+    <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div
+            className="relative max-w-3xl w-full bg-[#110c14] border border-red-600 rounded-lg overflow-hidden shadow-2xl">
+            <div className="p-3 bg-red-950/80 border-b border-red-800 flex justify-between items-center">
+                <h3 className="text-sm font-bold text-white font-mono">{selectedArt.title}</h3>
+                <button onClick={()=> setSelectedArt(null)}
+                    className="text-gray-400 hover:text-white p-1"
+                    >
+                    <X size={18} />
+                </button>
+            </div>
+            <div className="max-h-[70vh] overflow-hidden flex items-center justify-center bg-black">
+                <img src={selectedArt.image} alt={selectedArt.title} className="max-h-[70vh] w-auto object-contain" />
+            </div>
+            <div className="p-3 bg-[#0d0a10] flex justify-between items-center text-xs font-mono">
+                <span className="text-gray-400">ARTISTA: <strong
+                        className="text-red-400">{selectedArt.artist}</strong></span>
+                <span className="text-amber-400">CATEGORÍA: {selectedArt.tag}</span>
+            </div>
+        </div>
+    </div>
+    )}
+
+</div>
+);
+}
